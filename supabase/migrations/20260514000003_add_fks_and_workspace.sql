@@ -18,7 +18,7 @@ create index idx_company_members_user on company_members(user_id);
 create index idx_company_members_company on company_members(company_id);
 
 -- Helper function: get companies the current user belongs to
-create or replace function auth.user_company_ids()
+create or replace function public.user_company_ids()
 returns setof int
 language sql
 stable
@@ -106,8 +106,8 @@ begin
     execute format('
       create policy "company_scoped" on %I
         for all
-        using (%s in (select auth.user_company_ids()))
-        with check (%s in (select auth.user_company_ids()))
+        using (%s in (select public.user_company_ids()))
+        with check (%s in (select public.user_company_ids()))
     ', t,
       case when t = 'cia' then 'id' else 'cia' end,
       case when t = 'cia' then 'id' else 'cia' end
