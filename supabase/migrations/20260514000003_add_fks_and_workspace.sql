@@ -2,11 +2,37 @@
 -- Migration: Foreign Keys + Multi-Tenant Workspace + RLS Overhaul
 -- =============================================================================
 
+-- Pre-step: Fix imported company IDs (SQL Server had id=20, Postgres serial = 1)
+update fecha_s set cia = 1 where cia = 20;
+update catalogo set cia = 1 where cia = 20;
+update fecha_fin set cia = 1 where cia = 20;
+update bancos set cia = 1 where cia = 20;
+update cheque_h set cia = 1 where cia = 20;
+update cheque_d set cia = 1 where cia = 20;
+update trabajo set cia = 1 where cia = 20;
+update saldo_dia set cia = 1 where cia = 20;
+update saldo_ant set cia = 1 where cia = 20;
+update saldos set cia = 1 where cia = 20;
+update estado_r set cia = 1 where cia = 20;
+update diario set cia = 1 where cia = 20;
+update concepto set cia = 1 where cia = 20;
+update plantilla_h set cia = 1 where cia = 20;
+update plantilla_d set cia = 1 where cia = 20;
+update impress set cia = 1 where cia = 20;
+update i_fechas set cia = 1 where cia = 20;
+update i_sucursal set cia = 1 where cia = 20;
+update i_caja set cia = 1 where cia = 20;
+update i_compras set cia = 1 where cia = 20;
+update i_ventas_cf set cia = 1 where cia = 20;
+update i_ventas_fa set cia = 1 where cia = 20;
+-- Reset company serial to avoid future conflicts (now id=1, not 20)
+alter sequence cia_id_seq restart with 2;
+
 -- =============================================================================
 -- 1. COMPANY MEMBERSHIP TABLE (multi-user workspace support)
 -- =============================================================================
 
-create table company_members (
+create table if not exists company_members (
   id serial primary key,
   user_id uuid references auth.users(id) on delete cascade not null,
   company_id int references cia(id) on delete cascade not null,
@@ -31,43 +57,80 @@ $$;
 -- 2. FOREIGN KEY CONSTRAINTS
 -- =============================================================================
 
--- Core accounting
-alter table fecha_s add constraint fk_fecha_s_cia foreign key (cia) references cia(id) on delete cascade;
-alter table catalogo add constraint fk_catalogo_cia foreign key (cia) references cia(id) on delete cascade;
-alter table fecha_fin add constraint fk_fecha_fin_cia foreign key (cia) references cia(id) on delete cascade;
-alter table bancos add constraint fk_bancos_cia foreign key (cia) references cia(id) on delete cascade;
-alter table cheque_h add constraint fk_cheque_h_cia foreign key (cia) references cia(id) on delete cascade;
-alter table cheque_d add constraint fk_cheque_d_cia foreign key (cia) references cia(id) on delete cascade;
-alter table trabajo add constraint fk_trabajo_cia foreign key (cia) references cia(id) on delete cascade;
-alter table saldo_dia add constraint fk_saldo_dia_cia foreign key (cia) references cia(id) on delete cascade;
-alter table saldo_ant add constraint fk_saldo_ant_cia foreign key (cia) references cia(id) on delete cascade;
-alter table saldos add constraint fk_saldos_cia foreign key (cia) references cia(id) on delete cascade;
-alter table estado_r add constraint fk_estado_r_cia foreign key (cia) references cia(id) on delete cascade;
-alter table diario add constraint fk_diario_cia foreign key (cia) references cia(id) on delete cascade;
-alter table concepto add constraint fk_concepto_cia foreign key (cia) references cia(id) on delete cascade;
-alter table plantilla_h add constraint fk_plantilla_h_cia foreign key (cia) references cia(id) on delete cascade;
-alter table plantilla_d add constraint fk_plantilla_d_cia foreign key (cia) references cia(id) on delete cascade;
-alter table impress add constraint fk_impress_cia foreign key (cia) references cia(id) on delete cascade;
-
--- IVA module
-alter table i_cia add constraint fk_i_cia_cia foreign key (id) references cia(id) on delete cascade;
-alter table i_fechas add constraint fk_i_fechas_cia foreign key (cia) references cia(id) on delete cascade;
-alter table i_sucursal add constraint fk_i_sucursal_cia foreign key (cia) references cia(id) on delete cascade;
-alter table i_caja add constraint fk_i_caja_cia foreign key (cia) references cia(id) on delete cascade;
-alter table i_clientes add constraint fk_i_clientes_cia foreign key (cia) references cia(id) on delete cascade; -- may not have cia col, check
-
--- Actually i_clientes and i_tipos_doc don't have cia column - they're global lookup tables
--- Skip those. Same for i_tipos_doc.
-
--- Composite foreign keys (where parent has composite PK)
--- cheques: cheque_h → bancos (cia, cuenta, year)
--- cheque_d → cheque_h (cia, mes, voucher, no_cheque, fecha_vou)
--- These are too complex for simple FK; application enforces them
-
--- i_compras and i_ventas reference i_sucursal, i_tipos_doc, i_clientes
-alter table i_compras add constraint fk_i_compras_cia foreign key (cia) references cia(id) on delete cascade;
-alter table i_ventas_cf add constraint fk_i_ventas_cf_cia foreign key (cia) references cia(id) on delete cascade;
-alter table i_ventas_fa add constraint fk_i_ventas_fa_cia foreign key (cia) references cia(id) on delete cascade;
+-- Core accounting FKs (idempotent)
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'fk_fecha_s_cia') then
+    alter table fecha_s add constraint fk_fecha_s_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_catalogo_cia') then
+    alter table catalogo add constraint fk_catalogo_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_fecha_fin_cia') then
+    alter table fecha_fin add constraint fk_fecha_fin_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_bancos_cia') then
+    alter table bancos add constraint fk_bancos_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_cheque_h_cia') then
+    alter table cheque_h add constraint fk_cheque_h_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_cheque_d_cia') then
+    alter table cheque_d add constraint fk_cheque_d_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_trabajo_cia') then
+    alter table trabajo add constraint fk_trabajo_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_saldo_dia_cia') then
+    alter table saldo_dia add constraint fk_saldo_dia_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_saldo_ant_cia') then
+    alter table saldo_ant add constraint fk_saldo_ant_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_saldos_cia') then
+    alter table saldos add constraint fk_saldos_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_estado_r_cia') then
+    alter table estado_r add constraint fk_estado_r_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_diario_cia') then
+    alter table diario add constraint fk_diario_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_concepto_cia') then
+    alter table concepto add constraint fk_concepto_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_plantilla_h_cia') then
+    alter table plantilla_h add constraint fk_plantilla_h_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_plantilla_d_cia') then
+    alter table plantilla_d add constraint fk_plantilla_d_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_impress_cia') then
+    alter table impress add constraint fk_impress_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_i_cia_cia') then
+    alter table i_cia add constraint fk_i_cia_cia foreign key (id) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_i_fechas_cia') then
+    alter table i_fechas add constraint fk_i_fechas_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_i_sucursal_cia') then
+    alter table i_sucursal add constraint fk_i_sucursal_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_i_caja_cia') then
+    alter table i_caja add constraint fk_i_caja_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_i_compras_cia') then
+    alter table i_compras add constraint fk_i_compras_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_i_ventas_cf_cia') then
+    alter table i_ventas_cf add constraint fk_i_ventas_cf_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'fk_i_ventas_fa_cia') then
+    alter table i_ventas_fa add constraint fk_i_ventas_fa_cia foreign key (cia) references cia(id) on delete cascade;
+  end if;
+end;
+$$;
 
 -- =============================================================================
 -- 3. RLS OVERHAUL — Drop old policies, create company-scoped ones
