@@ -1,0 +1,14 @@
+# Supabase
+.supabase/
+node_modules/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
