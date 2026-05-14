@@ -168,8 +168,8 @@ begin
         using (%s in (select public.user_company_ids()))
         with check (%s in (select public.user_company_ids()))
     ', t,
-      case when t = 'cia' then 'id' else 'cia' end,
-      case when t = 'cia' then 'id' else 'cia' end
+      case when t in ('cia', 'i_cia') then 'id' else 'cia' end,
+      case when t in ('cia', 'i_cia') then 'id' else 'cia' end
     );
   end loop;
 end;
