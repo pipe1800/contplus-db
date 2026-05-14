@@ -9,7 +9,6 @@ update fecha_fin set cia = 1 where cia = 20;
 update bancos set cia = 1 where cia = 20;
 update cheque_h set cia = 1 where cia = 20;
 update cheque_d set cia = 1 where cia = 20;
-update trabajo set cia = 1 where cia = 20;
 update saldo_dia set cia = 1 where cia = 20;
 update saldo_ant set cia = 1 where cia = 20;
 update saldos set cia = 1 where cia = 20;
@@ -77,9 +76,6 @@ begin
   end if;
   if not exists (select 1 from pg_constraint where conname = 'fk_cheque_d_cia') then
     alter table cheque_d add constraint fk_cheque_d_cia foreign key (cia) references cia(id) on delete cascade;
-  end if;
-  if not exists (select 1 from pg_constraint where conname = 'fk_trabajo_cia') then
-    alter table trabajo add constraint fk_trabajo_cia foreign key (cia) references cia(id) on delete cascade;
   end if;
   if not exists (select 1 from pg_constraint where conname = 'fk_saldo_dia_cia') then
     alter table saldo_dia add constraint fk_saldo_dia_cia foreign key (cia) references cia(id) on delete cascade;
@@ -157,7 +153,7 @@ begin
   for t in
     select unnest(array[
       'cia', 'fecha_s', 'catalogo', 'fecha_fin', 'bancos',
-      'cheque_h', 'cheque_d', 'trabajo', 'saldo_dia', 'saldo_ant',
+      'cheque_h', 'cheque_d', 'saldo_dia', 'saldo_ant',
       'saldos', 'estado_r', 'diario', 'concepto', 'plantilla_h',
       'plantilla_d', 'impress',
       'i_cia', 'i_fechas', 'i_sucursal', 'i_caja',
