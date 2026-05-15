@@ -8,10 +8,15 @@ BEGIN
   -- ========================================================================
   -- 1. ESTUDIOS DOBLE V: merge [12] → [6]
   -- ========================================================================
-  -- Delete duplicate catalogo entries (same account + same fiscal year already in [6])
-  DELETE FROM catalogo WHERE cia = 12 AND (cuenta, fecha_ini) IN (
-    SELECT cuenta, fecha_ini FROM catalogo WHERE cia = 6
-  );
+  -- Delete rows from [12] that conflict with existing [6] rows
+  DELETE FROM catalogo WHERE cia = 12 AND (cuenta, fecha_ini) IN (SELECT cuenta, fecha_ini FROM catalogo WHERE cia = 6);
+  DELETE FROM concepto WHERE cia = 12 AND (mes, numero, ext, id_pda) IN (SELECT mes, numero, ext, id_pda FROM concepto WHERE cia = 6);
+  DELETE FROM diario WHERE cia = 12 AND (mes, numero, ext, item, id_partida) IN (SELECT mes, numero, ext, item, id_partida FROM diario WHERE cia = 6);
+  DELETE FROM fecha_s WHERE cia = 12 AND fecha IN (SELECT fecha FROM fecha_s WHERE cia = 6);
+  DELETE FROM saldo_ant WHERE cia = 12 AND (anio, cuenta) IN (SELECT anio, cuenta FROM saldo_ant WHERE cia = 6);
+  DELETE FROM estado_r WHERE cia = 12 AND (cuenta, fecha) IN (SELECT cuenta, fecha FROM estado_r WHERE cia = 6);
+
+  -- Now safe to remap
   UPDATE catalogo SET cia = 6 WHERE cia = 12;
   UPDATE concepto SET cia = 6 WHERE cia = 12;
   UPDATE diario SET cia = 6 WHERE cia = 12;
