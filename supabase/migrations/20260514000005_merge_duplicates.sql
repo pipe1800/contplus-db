@@ -27,31 +27,32 @@ BEGIN
   UPDATE estado_r SET cia = 6 WHERE cia = 12;
   UPDATE plantilla_h SET cia = 6 WHERE cia = 12;
   UPDATE plantilla_d SET cia = 6 WHERE cia = 12;
-  UPDATE company_members SET company_id = 6 WHERE company_id = 12;
+  DELETE FROM company_members WHERE company_id = 12;
   DELETE FROM cia WHERE id = 12;
 
   -- ========================================================================
   -- 2. IGLESIA BETHESDA: keep [14], merge any [13]/[15] data, delete shells
   -- ========================================================================
+  DELETE FROM company_members WHERE company_id IN (13, 15);
   UPDATE catalogo SET cia = 14 WHERE cia IN (13, 15);
   UPDATE concepto SET cia = 14 WHERE cia IN (13, 15);
   UPDATE diario SET cia = 14 WHERE cia IN (13, 15);
   UPDATE fecha_s SET cia = 14 WHERE cia IN (13, 15);
   UPDATE saldo_ant SET cia = 14 WHERE cia IN (13, 15);
   UPDATE estado_r SET cia = 14 WHERE cia IN (13, 15);
-  UPDATE company_members SET company_id = 14 WHERE company_id IN (13, 15);
   DELETE FROM cia WHERE id IN (13, 15);
 
   -- ========================================================================
   -- 3. JUDA: merge [9] → [10]
   -- ========================================================================
+  DELETE FROM company_members WHERE company_id = 9;
+  DELETE FROM company_members WHERE company_id = 10; -- will re-seed later
   UPDATE catalogo SET cia = 10 WHERE cia = 9;
   UPDATE concepto SET cia = 10 WHERE cia = 9;
   UPDATE diario SET cia = 10 WHERE cia = 9;
   UPDATE fecha_s SET cia = 10 WHERE cia = 9;
   UPDATE saldo_ant SET cia = 10 WHERE cia = 9;
   UPDATE estado_r SET cia = 10 WHERE cia = 9;
-  UPDATE company_members SET company_id = 10 WHERE company_id = 9;
   DELETE FROM cia WHERE id = 9;
 
   -- ========================================================================
