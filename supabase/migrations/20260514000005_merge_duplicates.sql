@@ -8,6 +8,10 @@ BEGIN
   -- ========================================================================
   -- 1. ESTUDIOS DOBLE V: merge [12] → [6]
   -- ========================================================================
+  -- Delete duplicate catalogo entries (same account + same fiscal year already in [6])
+  DELETE FROM catalogo WHERE cia = 12 AND (cuenta, fecha_ini) IN (
+    SELECT cuenta, fecha_ini FROM catalogo WHERE cia = 6
+  );
   UPDATE catalogo SET cia = 6 WHERE cia = 12;
   UPDATE concepto SET cia = 6 WHERE cia = 12;
   UPDATE diario SET cia = 6 WHERE cia = 12;
